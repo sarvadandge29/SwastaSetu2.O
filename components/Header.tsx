@@ -86,7 +86,7 @@ const Header = () => {
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
-        <li className="ml-2">
+        <li>
           <ModeToggle />
         </li>
         <li>
