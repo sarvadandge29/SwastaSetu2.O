@@ -37,12 +37,12 @@ const dummyCampaigns = [
   {
     _id: "4",
     title: "Medical Aid for Refugees",
-    description:
-      "Provide essential medical aid to refugees in conflict zones.",
+    description: "Provide essential medical aid to refugees in conflict zones.",
     coverImg: "/images/campaign4.jpg",
     currentAmount: 3000,
     targetAmount: 7000,
-  },{
+  },
+  {
     _id: "5",
     title: "Clean Water Initiative",
     description: "Help provide clean water to communities in need.",
@@ -70,8 +70,7 @@ const dummyCampaigns = [
   {
     _id: "8",
     title: "Medical Aid for Refugees",
-    description:
-      "Provide essential medical aid to refugees in conflict zones.",
+    description: "Provide essential medical aid to refugees in conflict zones.",
     coverImg: "/images/campaign4.jpg",
     currentAmount: 3000,
     targetAmount: 7000,
@@ -89,13 +88,25 @@ const AllCampaigns: React.FC = () => {
     <div className="p-8 lg:pl-24 lg:pr-24">
       {/* Search Bar */}
       <div className="relative mb-8 lg:pl-48 lg:mr-48">
-        <Input
-          type="text"
-          placeholder="Search campaigns..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-3 border rounded-full pr-10"
-        />
+        <label className="relative block">
+          <span className="sr-only">Search campaigns</span>
+          <Input
+            type="text"
+            placeholder="Search campaigns..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full p-3 pr-12 border rounded-full"
+          />
+          <span className="absolute inset-y-0 right-4 flex items-center">
+            <Image
+              src="/icons/Search.svg"
+              alt="Search"
+              width={20}
+              height={20}
+              className="text-gray-400"
+            />
+          </span>
+        </label>
       </div>
 
       {/* Campaign Grid */}
