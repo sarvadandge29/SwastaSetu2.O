@@ -1,14 +1,14 @@
 "use client"; // Ensures the component runs on the client side
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import Modal from '@/components/ui/Modal';
-import {ImageUpload} from '@/components/image-upload';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import Modal from "@/components/ui/Modal";
+import { ImageUpload } from "@/components/image-upload";
 
 const CreateCampaign: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -19,21 +19,25 @@ const CreateCampaign: React.FC = () => {
     publicAddress: "",
     deadline: "",
     currentAmount: 0,
-    status: "pending"
+    status: "pending",
   });
 
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<{ title: string, description: string } | null>(null);
+  const [modalContent, setModalContent] = useState<{ title: string; description: string } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleUploadComplete = (url: string) => {
-    setFormData(prev => ({ ...prev, coverImg: url }));
+  const handleUploadComplete = async (files: File[]) => {
+    if (files.length > 0) {
+      const file = files[0]; // Get the first file
+      const url = URL.createObjectURL(file); // Generate a URL for the file
+      setFormData((prev) => ({ ...prev, coverImg: url }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,16 +53,16 @@ const CreateCampaign: React.FC = () => {
 
     const adjustedFormData = {
       ...formData,
-      targetAmount: Number(formData.targetAmount)
+      targetAmount: Number(formData.targetAmount),
     };
 
     try {
-      const res = await fetch('/api/campaigns/create', {
-        method: 'POST',
+      const res = await fetch("/api/campaigns/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(adjustedFormData)
+        body: JSON.stringify(adjustedFormData),
       });
 
       if (res.ok) {
@@ -81,7 +85,7 @@ const CreateCampaign: React.FC = () => {
   };
 
   return (
-    <div className="relative bg-cover bg-center min-h-screen pt-20" >
+    <div className="relative bg-cover bg-center min-h-screen pt-20">
       <div className="absolute inset-0"></div>
 
       <div className="relative flex items-center justify-center min-h-screen p-4">
@@ -164,7 +168,7 @@ const CreateCampaign: React.FC = () => {
 
               <div className="flex justify-center">
                 <Button type="submit" className="bg-green-500 text-white px-6 py-3" disabled={isLoading}>
-                  {isLoading ? 'Submitting...' : 'Submit Campaign'}
+                  {isLoading ? "Submitting..." : "Submit Campaign"}
                 </Button>
               </div>
             </form>
@@ -174,8 +178,8 @@ const CreateCampaign: React.FC = () => {
 
       <Modal
         isOpen={isModalOpen}
-        title={modalContent?.title || ''}
-        description={modalContent?.description || ''}
+        title={modalContent?.title || ""}
+        description={modalContent?.description || ""}
         onClose={handleCloseModal}
       />
     </div>

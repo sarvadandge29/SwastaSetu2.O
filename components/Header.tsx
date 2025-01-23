@@ -72,12 +72,12 @@ const Header = () => {
               <NavigationMenuContent className="min-w-48">
                 <ul className="p-4 rounded shadow-lg">
                   <li className="hover:underline">
-                    <Link href="/create-campaigns" legacyBehavior passHref>
+                    <Link href="/campaigns/create-campaigns" legacyBehavior passHref>
                       <NavigationMenuLink>Create Campaign</NavigationMenuLink>
                     </Link>
                   </li>
                   <li className="hover:underline mt-2">
-                    <Link href="/All-Campaigns" legacyBehavior passHref>
+                    <Link href="/campaigns/All-Campaigns" legacyBehavior passHref>
                       <NavigationMenuLink>All Campaigns</NavigationMenuLink>
                     </Link>
                   </li>
