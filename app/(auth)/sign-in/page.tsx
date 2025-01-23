@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/utils/supabase/client"; // Ensure correct path to Supabase client
+import { useRouter } from "next/navigation";
 
 const SignIn = (props: React.ComponentPropsWithoutRef<"div">) => {
   const { className, ...rest } = props;
@@ -21,6 +22,7 @@ const SignIn = (props: React.ComponentPropsWithoutRef<"div">) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +37,7 @@ const SignIn = (props: React.ComponentPropsWithoutRef<"div">) => {
     if (error) {
       setError(error.message);
     } else {
-      console.log("Login successful:", data);
-      // You can redirect the user or perform other actions here
-      // Example: Router.push("/dashboard");
+      router.push("/")
     }
 
     setLoading(false);
