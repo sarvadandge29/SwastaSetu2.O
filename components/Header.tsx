@@ -15,11 +15,37 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../utils/supabase/client";
 
 const Header = () => {
   const pathname = usePathname();
-  const [isSignedIn, setIsSignedIn] = useState(true);
+  const [user, setUser] = useState<any>(null);  // Store the user object
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUser(session.user);
+        setIsSignedIn(true);
+      } else {
+        setIsSignedIn(false);
+      }
+    };
+
+    fetchSession();
+  }, []);
+
+  // Get the first letter of the user's username or email
+  const getInitial = () => {
+    if (user?.user_metadata?.username) {
+      return user.user_metadata.username.charAt(0).toUpperCase();
+    } else if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "U";  // Default to "U" if no user data is available
+  };
 
   return (
     <header className="my-10 flex justify-between gap-5">
@@ -52,11 +78,7 @@ const Header = () => {
                     </Link>
                   </li>
                   <li className="hover:underline mt-2">
-                    <Link
-                      href="/Emergency-Resources"
-                      legacyBehavior
-                      passHref
-                    >
+                    <Link href="/Emergency-Resources" legacyBehavior passHref>
                       <NavigationMenuLink>
                         Emergency Resources
                       </NavigationMenuLink>
@@ -91,10 +113,12 @@ const Header = () => {
         </li>
         <li>
           {isSignedIn ? (
+            <Link href="/profile">
             <Avatar className="cursor-pointer">
               <AvatarImage src="/path-to-user-avatar.jpg" alt="User Avatar" />
-              <AvatarFallback>KK</AvatarFallback>
+              <AvatarFallback>{getInitial()}</AvatarFallback>
             </Avatar>
+            </Link>
           ) : (
             <Link href="/sign-in">
               <Button>Sign In</Button>

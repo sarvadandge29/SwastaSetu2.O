@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ReactNode } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { UserProvider } from "@/context/UserContext";
 
 const ibmPlexSans = localFont({
   src: [
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
 const RootLayout = async ({ children }: { children: ReactNode }) => {
   return (
     <html lang="en" suppressHydrationWarning>
+      <UserProvider>
       <body
         className={`${ibmPlexSans.className} ${bebasNeue.variable} antialiased`}
       >
@@ -41,6 +43,7 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
           {children}
         </ThemeProvider>
       </body>
+      </UserProvider>
     </html>
   );
 };
