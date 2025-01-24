@@ -1,8 +1,9 @@
+import MapComponent from '@/components/MapComponent'
 import React from 'react'
 
 const EmergencyResources = () => {
   return (
-    <div>EmergencyResources</div>
+    <div><MapComponent /></div>
   )
 }
 
