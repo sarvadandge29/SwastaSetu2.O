@@ -18,6 +18,7 @@ const data = {
     { title: "Manage Campaigns", url: "/admin/CampaignsManagement" },
     { title: "Alerts", url: "/admin/Alerts" },
     { title: "Resource Management", url: "/admin/resource-management" },
+    { title: "Verify Doctors", url: "/admin/verify-doctors" },
   ],
 };
 
