@@ -1,21 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-// Static campaign data
-const staticCampaign = {
-  publicAddress: "examplePublicAddress",
-  coverImg: "/path/to/cover-image.jpg",
-  title: "Support Education for All",
-  currentAmount: 5000,
-  targetAmount: 10000,
-  deadline: "2025-12-31",
-  description: "Help us achieve our mission of providing education to underprivileged children.",
-};
+import { useParams } from "next/navigation"; // Import useParams to get the campaign ID
+import { supabase } from "@/utils/supabase/client"; // Import Supabase client
 
 const SuccessCard = () => (
   <div className="flex min-h-screen items-center justify-center bg-gray-100">
@@ -56,11 +47,67 @@ const SuccessCard = () => (
 
 const CampaignDetails: React.FC = () => {
   const [transactionSuccess, setTransactionSuccess] = useState<boolean>(false);
+  const [campaign, setCampaign] = useState<any>(null); // State to store campaign data
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
+  const { id } = useParams(); // Get the campaign ID from the URL
+
+  // Fetch campaign data from Supabase
+  useEffect(() => {
+    const fetchCampaign = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("campaigns") // Use the correct table name
+          .select("*")
+          .eq("id", id) // Filter by campaign ID
+          .single(); // Fetch a single record
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        setCampaign(data); // Set campaign data
+      } catch (error: any) {
+        setError(error.message); // Set error message
+      } finally {
+        setLoading(false); // Set loading to false
+      }
+    };
+
+    fetchCampaign();
+  }, [id]);
 
   const handleFundCampaign = () => {
     // Placeholder for handling fund logic
     setTransactionSuccess(true);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen p-8 rounded-xl flex items-center justify-center">
+        <div className="text-center">Loading campaign details...</div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen p-8 rounded-xl flex items-center justify-center">
+        <div className="text-center text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
+  // If campaign data is not found
+  if (!campaign) {
+    return (
+      <div className="min-h-screen p-8 rounded-xl flex items-center justify-center">
+        <div className="text-center">Campaign not found.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-8 rounded-xl">
@@ -75,11 +122,12 @@ const CampaignDetails: React.FC = () => {
             {/* Campaign Image */}
             <div className="flex-1">
               <Image
-                src={staticCampaign.coverImg}
-                alt={staticCampaign.title}
+                src={campaign.imageLink || "/images/default-campaign.jpg"} // Fallback image
+                alt={campaign.title}
                 width={600}
                 height={400}
                 className="rounded-lg"
+                unoptimized // Add this if using external URLs
               />
             </div>
 
@@ -93,7 +141,7 @@ const CampaignDetails: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center text-lg font-bold text-green-500">
-                  {staticCampaign.currentAmount} of {staticCampaign.targetAmount}
+                  {campaign.currentAmount} of {campaign.targetAmount}
                 </CardContent>
               </Card>
 
@@ -105,7 +153,7 @@ const CampaignDetails: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center text-lg font-semibold text-green-500">
-                  {new Date(staticCampaign.deadline).toLocaleDateString()}
+                  {new Date(campaign.deadline).toLocaleDateString()}
                 </CardContent>
               </Card>
             </div>
@@ -116,7 +164,7 @@ const CampaignDetails: React.FC = () => {
             {/* Creator & Story */}
             <div className="flex-1">
               <h4 className="text-xl font-semibold font-ibm-plex-sans"><span className="font-ibm-plex-sans">CREATOR</span>: UNICEF</h4>
-              <p className="text-lg mt-4 font-ibm-plex-sans">{staticCampaign.description}</p>
+              <p className="text-lg mt-4 font-ibm-plex-sans">{campaign.description}</p>
             </div>
 
             {/* Fund Campaign Card */}
