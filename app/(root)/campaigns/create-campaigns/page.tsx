@@ -98,7 +98,7 @@ const CreateCampaign: React.FC = () => {
       if (insertError) throw insertError;
 
       setSuccessMessage("Campaign created successfully!");
-      router.push("/campaigns/All-campaigns"); // Redirect to campaigns page after success
+      router.push("/campaigns/All-Campaigns"); // Redirect to campaigns page after success
     } catch (error) {
       console.error("Error:", error);
       setErrorMessage("There was an error creating your campaign.");
