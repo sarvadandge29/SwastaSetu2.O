@@ -28,8 +28,7 @@ type Alert = {
   userName: string;
   message: string;
   level: string;
-  title: string;
-  location: string | null; // Add location field to the Alert type
+  tittle: string;
 };
 
 const Alerts = () => {
@@ -39,7 +38,7 @@ const Alerts = () => {
   const [level, setLevel] = useState<"moderate" | "high">("moderate"); // State for alert level
   const [loading, setLoading] = useState<boolean>(true); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
-  const [currentUser, setCurrentUser] = useState<{ id: string; userName: string; location: string | null } | null>(null); // State for current user
+  const [currentUser, setCurrentUser] = useState<{ id: string; userName: string } | null>(null); // State for current user
 
   // Fetch current user
   const fetchCurrentUser = async () => {
@@ -49,10 +48,10 @@ const Alerts = () => {
       if (error) throw error;
 
       if (user) {
-        // Fetch additional user details from the user table
+        // Fetch additional user details from the user table if needed
         const { data: userData, error: userError } = await supabase
           .from("user")
-          .select("userName, location")
+          .select("userName")
           .eq("userId", user.id)
           .single();
 
@@ -61,7 +60,6 @@ const Alerts = () => {
         setCurrentUser({
           id: user.id,
           userName: userData?.userName || "Unknown",
-          location: userData?.location || null,
         });
       }
     } catch (error) {
@@ -72,14 +70,11 @@ const Alerts = () => {
 
   // Fetch alerts from Supabase
   const fetchAlerts = async () => {
-    if (!currentUser?.location) return; // Do not fetch alerts if admin location is not available
-
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from("alerts") // Use the correct table name
         .select("*")
-        .eq("location", currentUser.location) // Filter alerts with the same location as the admin
         .order("id", { ascending: true }); // Sort by ID in ascending order
 
       if (error) throw error;
@@ -91,6 +86,13 @@ const Alerts = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calculate the next ID based on the maximum existing ID
+  const getNextId = () => {
+    if (alerts.length === 0) return 1; // If no alerts, start from 1
+    const maxId = Math.max(...alerts.map((alert) => alert.id)); // Find the maximum ID
+    return maxId + 1; // Return the next ID
   };
 
   // Add a new alert
@@ -107,31 +109,26 @@ const Alerts = () => {
 
     try {
       setLoading(true);
-      const nextId = alerts.length > 0 ? Math.max(...alerts.map((alert) => alert.id)) + 1 : 1; // Calculate the next ID
+      const nextId = getNextId(); // Calculate the next ID
       const { data, error } = await supabase
         .from("alerts") // Use the correct table name
         .insert([
           {
             id: nextId, // Manually assign the next ID
-            title: title,
+            tittle: title,
             message: message,
             level: level,
             userId: currentUser.id,
             userName: currentUser.userName,
-            location: currentUser.location, // Store the admin's location
           },
-        ])
-        .select(); // Return the inserted row
+        ]);
 
       if (error) throw error;
-
-      if (data) {
-        setAlerts((prevAlerts) => [...prevAlerts, data[0]]); // Add the new alert to the state
-      }
 
       setTitle(""); // Clear title input
       setMessage(""); // Clear message input
       setLevel("moderate"); // Reset level to default
+      await fetchAlerts(); // Refresh alerts
     } catch (error) {
       console.error("Error adding alert:", error);
       setError("Failed to add alert.");
@@ -160,14 +157,8 @@ const Alerts = () => {
   // Fetch current user and alerts on component mount
   useEffect(() => {
     fetchCurrentUser();
+    fetchAlerts();
   }, []);
-
-  // Fetch alerts when currentUser.location changes
-  useEffect(() => {
-    if (currentUser?.location) {
-      fetchAlerts();
-    }
-  }, [currentUser?.location]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -177,8 +168,8 @@ const Alerts = () => {
     <div className="p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Alerts in {currentUser?.location || "Your Location"}</CardTitle>
-          <CardDescription>A list of all alerts in your location.</CardDescription>
+          <CardTitle>Alerts</CardTitle>
+          <CardDescription>A list of all alerts.</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Add Alert Form */}
@@ -217,7 +208,7 @@ const Alerts = () => {
 
           {/* Alerts Table */}
           <Table>
-            <TableCaption>A list of all alerts in your location.</TableCaption>
+            <TableCaption>A list of all alerts.</TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -226,7 +217,6 @@ const Alerts = () => {
                 <TableHead>Title</TableHead>
                 <TableHead>Message</TableHead>
                 <TableHead>Level</TableHead>
-                <TableHead>Location</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -236,10 +226,9 @@ const Alerts = () => {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{alert.userId}</TableCell>
                   <TableCell>{alert.userName}</TableCell>
-                  <TableCell>{alert.title}</TableCell>
+                  <TableCell>{alert.tittle}</TableCell>
                   <TableCell>{alert.message}</TableCell>
                   <TableCell>{alert.level}</TableCell>
-                  <TableCell>{alert.location}</TableCell>
                   <TableCell>
                     <Button
                       variant="destructive"
