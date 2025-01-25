@@ -24,19 +24,46 @@ type User = {
   email: string;
   phoneNumber: string;
   userName: string;
+  location: string | null; // Add location field to the User type
 };
 
 const AllUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [adminLocation, setAdminLocation] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAdminLocation = async () => {
+      try {
+        // Fetch the admin's location
+        const { data: adminData, error: adminError } = await supabase
+          .from("user")
+          .select("location")
+          .eq("userType", "admin")
+          .single();
+
+        if (adminError) throw adminError;
+
+        setAdminLocation(adminData?.location || null);
+      } catch (error) {
+        console.error("Error fetching admin location:", error);
+      }
+    };
+
+    fetchAdminLocation();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
+      if (!adminLocation) return; // Do not fetch users if admin location is not available
+
       try {
+        // Fetch users who have the same location as the admin
         const { data, error } = await supabase
           .from("user")
           .select("*")
-          .neq("userType", "admin");
+          .eq("location", adminLocation) // Filter users with the same location as the admin
+          .neq("userType", "admin"); // Exclude admin users
 
         if (error) throw error;
 
@@ -49,7 +76,7 @@ const AllUsers: React.FC = () => {
     };
 
     fetchUsers();
-  }, []);
+  }, [adminLocation]);
 
   const handleDeleteUser = async (userId: string) => {
     try {
@@ -78,8 +105,10 @@ const AllUsers: React.FC = () => {
     <div className="p-4">
       <Card>
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>A list of all registered users.</CardDescription>
+          <CardTitle>Users in {adminLocation || "Your Location"}</CardTitle>
+          <CardDescription>
+            A list of all registered users in the same location as you.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -89,6 +118,7 @@ const AllUsers: React.FC = () => {
                 <TableHead>Email</TableHead>
                 <TableHead>Phone Number</TableHead>
                 <TableHead>User Name</TableHead>
+                <TableHead>Location</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -99,6 +129,7 @@ const AllUsers: React.FC = () => {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.phoneNumber}</TableCell>
                   <TableCell>{user.userName}</TableCell>
+                  <TableCell>{user.location}</TableCell>
                   <TableCell>
                     <Button
                       variant="destructive"

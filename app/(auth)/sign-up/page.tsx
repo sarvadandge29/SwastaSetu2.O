@@ -98,12 +98,6 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            username,
-            phone: phoneNumber,
-          },
-        },
       });
 
       if (authError) {
@@ -111,6 +105,11 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
       }
 
       const user = data?.user;
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          display_name: username,
+        },
+      });
 
       const { error: insertError } = await supabase.from("user").insert([
         {
