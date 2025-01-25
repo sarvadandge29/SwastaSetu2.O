@@ -164,7 +164,7 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
                 </div>
                 <Button
                   type="button"
-                  className="w-full bg-blue-500 hover:bg-blue-700"
+                  className="w-full bg-green-500 hover:bg-green-700"
                   onClick={fetchLocation}
                   disabled={loading || location !== null}
                 >

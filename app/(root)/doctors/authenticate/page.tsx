@@ -135,7 +135,7 @@ const Authenticate = () => {
               </div>
 
               <div>
-                <Label htmlFor="idCardLink">ID Card *</Label>
+                <Label htmlFor="idCardLink">Doctor's License *</Label>
                 <Input
                   id="idCardLink"
                   name="idCardLink"
