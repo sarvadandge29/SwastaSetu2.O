@@ -24,16 +24,47 @@ const CreatePost = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
+  const [isVerifiedDoctor, setIsVerifiedDoctor] = useState<boolean>(false);
+  const [isDoctor, setIsDoctor] = useState<boolean>(false);
 
   const router = useRouter();
   const { userDetails } = useAuth(); // Fetch user details from the context
 
   useEffect(() => {
-    if (userDetails) {
-      setUserName(userDetails.userName || ""); // Set userName from the session
-      setUserId(userDetails.userId || ""); // Set userId from the session
-    }
+    const fetchUserRoleAndVerification = async () => {
+      if (userDetails) {
+        setUserName(userDetails.userName || ""); // Set userName from the session
+        setUserId(userDetails.userId || ""); // Set userId from the session
+
+        // Fetch the user's role and verification status
+        const { data, error } = await supabase
+          .from("doctors") // Replace with your table name
+          .select("authenticated")
+          .eq("userId", userDetails.userId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching doctor details:", error);
+          setIsDoctor(false); // User is not a doctor
+        } else if (data) {
+          setIsDoctor(true); // User is a doctor
+          if (data.authenticated === "verified") {
+            setIsVerifiedDoctor(true); // User is a verified doctor
+          } else {
+            setIsVerifiedDoctor(false); // User is a doctor but not verified
+          }
+        }
+      }
+    };
+
+    fetchUserRoleAndVerification();
   }, [userDetails]);
+
+  useEffect(() => {
+    if (!isDoctor && userDetails) {
+      router.push("/doctors/authenticate");
+    }
+  }, [isDoctor, userDetails, router]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -103,6 +134,32 @@ const CreatePost = () => {
       setLoading(false);
     }
   };
+
+  if (!isDoctor) {
+    return null; // Redirecting to the authentication page, so no need to render anything
+  }
+
+  if (!isVerifiedDoctor) {
+    return (
+      <div className="relative bg-cover bg-center min-h-96 pt-20">
+        <div className="absolute inset-0"></div>
+        <div className="relative flex items-center justify-center min-h-screen p-4">
+          <Card className="max-w-2xl w-full bg-opacity-90 rounded-lg p-2 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-center text-3xl">
+                Create a Post
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-500 text-center">
+                Only verified doctors can create posts.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative bg-cover bg-center min-h-96 pt-20">
