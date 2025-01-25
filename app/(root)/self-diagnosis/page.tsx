@@ -1,155 +1,121 @@
+// app/page.tsx
 "use client";
 
-import React, { useState } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 
-const SelfDiagnosis: React.FC = () => {
-  const [formData, setFormData] = useState({
-    age: "",
-    gender: "",
-    duration: "",
-    symptoms: "",
-    allergies: "",
-    medications: "",
-  });
-
-  const [result, setResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+export default function SelfDiagnosisPage() {
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("male");
+  const [symptoms, setSymptoms] = useState("");
+  const [duration, setDuration] = useState("");
+  const [allergies, setAllergies] = useState("");
+  const [diagnosisResult, setDiagnosisResult] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    const prompt = `A ${age}-year-old ${gender} is experiencing ${symptoms} for ${duration}. They have allergies to ${allergies}. What could be the possible reason, and should they see a doctor?`;
 
     try {
-      const genAI = new GoogleGenerativeAI("YOUR_GEMINI_API_KEY");
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const response = await fetch("/api/gemini", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
 
-      const prompt = `Based on the following information, provide a possible diagnosis and advice:
-- Age: ${formData.age}
-- Gender: ${formData.gender}
-- Duration of Symptoms: ${formData.duration}
-- Symptoms: ${formData.symptoms}
-- Allergies: ${formData.allergies}
-- Medications: ${formData.medications}
-
-Please provide a detailed response.`;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-
-      setResult(text);
+      const data = await response.json();
+      setDiagnosisResult(data.result);
     } catch (error) {
       console.error("Error fetching diagnosis:", error);
-      setResult("An error occurred. Please try again later.");
-    } finally {
-      setLoading(false);
+      setDiagnosisResult("An error occurred. Please try again.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl">
-        <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100 text-center">Self Diagnosis</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Age</label>
-            <input
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gender</label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Duration of Symptoms (e.g., 2 days, 1 week)
-            </label>
-            <input
-              type="text"
-              name="duration"
-              value={formData.duration}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Describe Symptoms</label>
-            <textarea
-              name="symptoms"
-              value={formData.symptoms}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-            ></textarea>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Known Allergies</label>
-            <input
-              type="text"
-              name="allergies"
-              value={formData.allergies}
-              onChange={handleInputChange}
-              className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Medications</label>
-            <input
-              type="text"
-              name="medications"
-              value={formData.medications}
-              onChange={handleInputChange}
-              className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 dark:bg-blue-700 dark:hover:bg-blue-600"
-            disabled={loading}
-          >
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-        </form>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Self-Diagnosis</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="age">Age</Label>
+          <Input
+            id="age"
+            type="number"
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            required
+          />
+        </div>
 
-        {result && (
-          <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Diagnosis Result</h2>
-            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{result}</p>
-            <p className="mt-4 font-medium text-red-600 dark:text-red-400">
-              Please consult a doctor for further evaluation.
-            </p>
-          </div>
-        )}
-      </div>
+        <div>
+          <Label>Gender</Label>
+          <RadioGroup
+            value={gender}
+            onValueChange={(value) => setGender(value)}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="male" id="male" />
+              <Label htmlFor="male">Male</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="female" id="female" />
+              <Label htmlFor="female">Female</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="other" id="other" />
+              <Label htmlFor="other">Other</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <div>
+          <Label htmlFor="symptoms">Symptoms</Label>
+          <Textarea
+            id="symptoms"
+            value={symptoms}
+            onChange={(e) => setSymptoms(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="duration">Duration</Label>
+          <Input
+            id="duration"
+            type="text"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="allergies">Allergies</Label>
+          <Input
+            id="allergies"
+            type="text"
+            value={allergies}
+            onChange={(e) => setAllergies(e.target.value)}
+            required
+          />
+        </div>
+
+        <Button type="submit">Get Diagnosis</Button>
+      </form>
+
+      {diagnosisResult && (
+        <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">Diagnosis Result</h2>
+          <p>{diagnosisResult}</p>
+        </div>
+      )}
     </div>
   );
-};
-
-export default SelfDiagnosis;
+}
