@@ -4,7 +4,6 @@ import { supabase, supabaseAdminRole } from "@/utils/supabase/client";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -35,6 +34,7 @@ type Campaign = {
 const CampaignsManagement: React.FC = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -45,7 +45,6 @@ const CampaignsManagement: React.FC = () => {
 
         if (error) throw error;
 
-        // Sort campaigns: pending first, then approved, then others
         const sortedCampaigns = data.sort((a, b) => {
           if (a.status === "pending") return -1;
           if (b.status === "pending") return 1;
@@ -90,10 +89,8 @@ const CampaignsManagement: React.FC = () => {
       }
 
       if (newStatus === "takedown") {
-        // If the new status is "takedown", delete the campaign
         await handleDeleteCampaign(id);
       } else {
-        // Otherwise, update the status
         const { error } = await supabaseAdminRole
           .from("campaigns")
           .update({ status: newStatus })
@@ -101,7 +98,6 @@ const CampaignsManagement: React.FC = () => {
 
         if (error) throw error;
 
-        // Update the local state to reflect the new status
         setCampaigns((prevCampaigns) =>
           prevCampaigns.map((campaign) =>
             campaign.id === id ? { ...campaign, status: newStatus } : campaign
@@ -111,6 +107,14 @@ const CampaignsManagement: React.FC = () => {
     } catch (error) {
       console.error("Error updating campaign status:", error);
     }
+  };
+
+  const openImageModal = (imageLink: string) => {
+    setSelectedImage(imageLink);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
   };
 
   if (loading) {
@@ -144,9 +148,14 @@ const CampaignsManagement: React.FC = () => {
             <TableBody>
               {campaigns.map((campaign, index) => (
                 <TableRow key={campaign.id}>
-                  <TableCell>{index + 1}</TableCell> {/* Custom ID based on table order */}
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell>
-                    <img src={campaign.imageLink} alt={campaign.title} className="w-16 h-16 object-cover" />
+                    <img
+                      src={campaign.imageLink}
+                      alt={campaign.title}
+                      className="w-16 h-16 object-cover cursor-pointer"
+                      onClick={() => openImageModal(campaign.imageLink)}
+                    />
                   </TableCell>
                   <TableCell>{campaign.title}</TableCell>
                   <TableCell>{campaign.description}</TableCell>
@@ -183,6 +192,28 @@ const CampaignsManagement: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={closeImageModal}
+        >
+          <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
+            <img
+              src={selectedImage}
+              alt="Preview"
+              className="w-full h-full object-contain"
+            />
+            <Button
+              className="mt-4"
+              variant="destructive"
+              onClick={closeImageModal}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
