@@ -1,3 +1,5 @@
+"use client"; // Mark this component as a Client Component
+
 import * as React from "react";
 import {
   Sidebar,
@@ -7,6 +9,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { ModeToggle } from "./ModeToggle";
+import { supabase } from "@/utils/supabase/client"; // Import Supabase client
 
 const data = {
   navMain: [
@@ -19,6 +22,18 @@ const data = {
 };
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      // Redirect to login page or home page after logout
+      window.location.href = "/sign-in"; // Adjust the redirect path as needed
+    } catch (error: any) {
+      console.error("Error logging out:", error.message);
+    }
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarContent className="gap-0 relative h-full">
@@ -47,12 +62,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
 
         {/* Logout Button */}
         <div className="absolute bottom-0 left-0 w-full flex flex-row items-center">
-          
           <button
+            onClick={handleLogout}
             className="flex items-center gap-2 w-full p-4 text-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <span>Logout</span>
-            {/* SVG Icon */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -69,7 +83,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             </svg>
           </button>
           <div className="mr-4">
-          <ModeToggle  />
+            <ModeToggle />
           </div>
         </div>
       </SidebarContent>
