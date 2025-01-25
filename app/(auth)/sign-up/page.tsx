@@ -26,51 +26,60 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-const handleSignUp = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError(null);
-  setSuccessMessage(null);
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-          phone: phoneNumber,
+    // Validate phone number length
+    if (phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
+      setError("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
+            phone: phoneNumber,
+          },
         },
-      },
-    });
+      });
 
-    if (authError) {
-      throw authError;
+      if (authError) {
+        throw authError;
+      }
+
+      const user = data?.user;
+
+      const { error: insertError } = await supabase.from("user").insert([
+        {
+          userId: user?.id,
+          userName: username,
+          email: user?.email,
+          phoneNumber: phoneNumber,
+        },
+      ]);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      setSuccessMessage("Sign up successful! Redirecting...");
+      setTimeout(() => {
+        router.push("/");
+      }, 1500); // Redirect after 1.5 seconds
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    const user = data?.user;
-
-    const { error: insertError } = await supabase.from("user").insert([
-      {
-        userId: user?.id,
-        userName: username,
-        email: user?.email,
-        phoneNumber: phoneNumber,
-      },
-    ]);
-
-    if (insertError) {
-      throw insertError;
-    }
-    setTimeout(() => {
-      router.push("/")
-    }, 1500); // Redirect after 1.5 seconds
-  } catch (err: any) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
