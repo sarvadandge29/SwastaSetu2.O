@@ -20,7 +20,8 @@ const AllCampaigns: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from("campaigns") // Use the correct table name
-          .select("*"); // Fetch all columns
+          .select("*")
+          .eq("status", "approved"); // Filter by approved campaigns
 
         if (error) {
           throw new Error(error.message);
