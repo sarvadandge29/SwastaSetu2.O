@@ -23,7 +23,9 @@ const Header = () => {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null); // Store the user object
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [alerts, setAlerts] = useState<any[]>([]); // Store alerts from the database
 
+  // Fetch the user session
   useEffect(() => {
     const fetchSession = async () => {
       const {
@@ -40,6 +42,25 @@ const Header = () => {
     fetchSession();
   }, []);
 
+  // Fetch alerts from the database
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("alerts") // Replace with your table name
+          .select("*")
+
+        if (error) throw error;
+
+        setAlerts(data || []); // Set the alerts state
+      } catch (error) {
+        console.error("Error fetching alerts:", error);
+      }
+    };
+
+    fetchAlerts();
+  }, []);
+
   // Get the first letter of the user's username or email
   const getInitial = () => {
     if (user?.user_metadata?.username) {
@@ -52,7 +73,6 @@ const Header = () => {
 
   return (
     <div>
-      {/* <AlertBar message="Emergency Alert their is a covid outbreak ongoing" /> */}
       <header className="my-10 flex justify-between gap-5">
         <Link href="/">
           <Image src="/icons/logo.png" alt="logo" width={60} height={60} />
@@ -143,6 +163,14 @@ const Header = () => {
           </li>
         </ul>
       </header>
+      {/* Display all alerts */}
+      {alerts.map((alert) => (
+        <AlertBar
+          key={alert.id} // Use the alert ID as the key
+          title={alert.tittle} // Pass the alert title
+          message={alert.message} // Pass the alert message
+        />
+      ))}
     </div>
   );
 };

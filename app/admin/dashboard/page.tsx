@@ -41,7 +41,7 @@ const Skeleton = () => (
 
 const items = [
   {
-    title: "The Dawn of Innovation",
+    title: "",
     description: "Explore the birth of groundbreaking ideas and inventions.",
     header: <Skeleton />,
     className: "md:col-span-2",

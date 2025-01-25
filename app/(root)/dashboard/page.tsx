@@ -46,6 +46,7 @@ const DashboardPage = () => {
   ];
 
   return (
+
     <div className="min-h-screen bg-transparent text-white">
       {/* Header Section */}
       <header className="py-6  text-center">
@@ -55,9 +56,11 @@ const DashboardPage = () => {
 
       {/* Main Content Section */}
       <main className="p-6 flex flex-col items-center">
-        <div className="w-full max-w-7xl">
+        <div className="w-full max-w-screen mx-10">
           {/* Power BI Embed */}
+
           <div className="bg-white rounded-lg overflow-hidden shadow-lg mb-8">
+
             <iframe
               src={powerBIReportURL}
               frameBorder="0"
