@@ -21,11 +21,30 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [city, setCity] = useState<string | null>(null); // Store city name instead of coordinates
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Reverse geocode coordinates to get the city name
+  const reverseGeocode = async (latitude: number, longitude: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+      );
+      const data = await response.json();
+
+      if (data.address) {
+        return data.address.city || data.address.town || data.address.village || "Unknown City";
+      } else {
+        throw new Error("City not found in response.");
+      }
+    } catch (err) {
+      console.error("Error reverse geocoding:", err);
+      throw err;
+    }
+  };
 
   const fetchLocation = async () => {
     if (!navigator.geolocation) {
@@ -33,15 +52,26 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          // Reverse geocode to get the city name
+          const cityName = await reverseGeocode(latitude, longitude);
+          setCity(cityName); // Set the city name in the state
+        } catch (err) {
+          setError("Unable to fetch city name. Please try again.");
+        } finally {
+          setLoading(false);
+        }
       },
       (error) => {
         setError("Unable to fetch location. Please enable location services.");
+        setLoading(false);
       }
     );
   };
@@ -55,7 +85,7 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
       return;
     }
 
-    if (!location) {
+    if (!city) {
       setError("Location is required. Please enable location services.");
       return;
     }
@@ -88,7 +118,7 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
           userName: username,
           email: user?.email,
           phoneNumber: phoneNumber,
-          location: location ? `${location.lat},${location.lng}` : null,
+          location: city, // Store the city name
         },
       ]);
 
@@ -164,11 +194,11 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
                 </div>
                 <Button
                   type="button"
-                  className="w-full bg-blue-500 hover:bg-blue-700"
+                  className="w-full bg-green-500 hover:bg-green-700"
                   onClick={fetchLocation}
-                  disabled={loading || location !== null}
+                  disabled={loading || city !== null}
                 >
-                  {location ? "Location Captured" : "Get Location"}
+                  {city ? `Location: ${city}` : "Get Location"}
                 </Button>
                 <Button
                   type="submit"

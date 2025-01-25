@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, FC } from "react";
+import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // Loader component for a consistent loading state.
-const Loader: FC = () => (
+const Loader = () => (
   <div className="absolute z-[10000] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
     <svg
       aria-hidden="true"
@@ -36,26 +36,70 @@ const Loader: FC = () => (
   </div>
 );
 
-const MapComponent: FC = () => {
+const MapComponent = () => {
   const [markerData, setMarkerData] = useState<{ coordinates: [number, number]; title: string } | null>(null);
+  const [nearbyHospitals, setNearbyHospitals] = useState<{ coordinates: [number, number]; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch the user's current location
   const fetchCurrentLocation = () => {
     setLoading(true);
+    setError(null);
+
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      setLoading(false);
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         setMarkerData({
           coordinates: [latitude, longitude],
           title: "Your Current Location",
         });
+
+        // Fetch nearby hospitals
+        await fetchNearbyHospitals(latitude, longitude);
         setLoading(false);
       },
       (error) => {
         console.error("Error fetching location:", error);
+        setError("Unable to retrieve your location. Please enable location services and try again.");
         setLoading(false);
+      },
+      {
+        enableHighAccuracy: true, // Use high accuracy mode
+        timeout: 10000, // 10 seconds timeout
+        maximumAge: 0, // Do not use a cached position
       }
     );
+  };
+
+  // Fetch nearby hospitals using OpenStreetMap Nominatim
+  const fetchNearbyHospitals = async (lat: number, lon: number) => {
+    try {
+      const radius = 5000; // Search within a 5km radius
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=hospital&lat=${lat}&lon=${lon}&radius=${radius}&limit=10`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const hospitals = data.map((place: any) => ({
+          coordinates: [parseFloat(place.lat), parseFloat(place.lon)],
+          name: place.display_name,
+        }));
+        setNearbyHospitals(hospitals);
+      } else {
+        setError("No hospitals found nearby.");
+      }
+    } catch (err) {
+      console.error("Error fetching nearby hospitals:", err);
+      setError("Failed to fetch nearby hospitals. Please try again later.");
+    }
   };
 
   useEffect(() => {
@@ -65,6 +109,11 @@ const MapComponent: FC = () => {
   return (
     <>
       {loading && <Loader />}
+      {error && (
+        <div className="absolute z-[10000] top-5 left-1/2 transform -translate-x-1/2 bg-red-500 text-white p-2 rounded-md">
+          {error}
+        </div>
+      )}
       <MapContainer
         center={markerData?.coordinates || [28.474388, 77.503990]} // Fallback to default coordinates
         zoom={15}
@@ -76,6 +125,11 @@ const MapComponent: FC = () => {
             <Popup>{markerData.title}</Popup>
           </Marker>
         )}
+        {nearbyHospitals.map((hospital, index) => (
+          <Marker key={index} position={hospital.coordinates}>
+            <Popup>{hospital.name}</Popup>
+          </Marker>
+        ))}
       </MapContainer>
       <button
         onClick={fetchCurrentLocation}

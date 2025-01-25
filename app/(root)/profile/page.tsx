@@ -14,16 +14,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/UserContext"; // Import the useAuth hook
 import { supabase } from "@/utils/supabase/client";
 
-// Define the type for location
-type Location = {
-  lat: number | null;
-  lng: number | null;
-};
-
 const Profile = () => {
   const { user, userDetails, session } = useAuth(); // Access user, userDetails, and session from context
   const router = useRouter();
-  const [location, setLocation] = useState<Location>({ lat: null, lng: null }); // Use the Location type
+  const [city, setCity] = useState<string | null>(null); // Store city name instead of coordinates
   const [loadingLocation, setLoadingLocation] = useState<boolean>(false);
 
   // Check session only on initial mount
@@ -36,6 +30,25 @@ const Profile = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/sign-in");
+  };
+
+  // Reverse geocode coordinates to get the city name
+  const reverseGeocode = async (latitude: number, longitude: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+      );
+      const data = await response.json();
+
+      if (data.address) {
+        return data.address.city || data.address.town || data.address.village || "Unknown City";
+      } else {
+        throw new Error("City not found in response.");
+      }
+    } catch (err) {
+      console.error("Error reverse geocoding:", err);
+      throw err;
+    }
   };
 
   const updateLocation = async () => {
@@ -51,19 +64,20 @@ const Profile = () => {
         const { latitude, longitude } = position.coords;
 
         try {
-          // Convert latitude and longitude to a single string
-          const locationString = `${latitude},${longitude}`;
+          // Reverse geocode to get the city name
+          const cityName = await reverseGeocode(latitude, longitude);
 
+          // Update the city name in the database
           const { error } = await supabase
             .from("user")
-            .update({ location: locationString }) // Store as a string
+            .update({ location: cityName }) // Store the city name
             .eq("userId", user?.id);
 
           if (error) {
             throw error;
           }
 
-          setLocation({ lat: latitude, lng: longitude });
+          setCity(cityName); // Update the city name in the state
           alert("Location updated successfully.");
         } catch (err) {
           console.error("Error updating location:", err);
@@ -115,9 +129,7 @@ const Profile = () => {
           <div>
             <h3 className="text-lg font-semibold">Location:</h3>
             <p className="text-gray-700">
-              {location.lat !== null && location.lng !== null
-                ? `Lat: ${location.lat}, Lng: ${location.lng}`
-                : "Location not set"}
+              {city || "Location not set"}
             </p>
           </div>
           <div className="space-y-2">
