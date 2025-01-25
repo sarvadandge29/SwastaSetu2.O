@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/utils/supabase/client"; // Ensure correct path to Supabase client
+import { supabase } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 const SignIn = (props: React.ComponentPropsWithoutRef<"div">) => {
@@ -29,18 +28,35 @@ const SignIn = (props: React.ComponentPropsWithoutRef<"div">) => {
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (authError) {
+        throw new Error(authError.message);
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from("user")
+        .select("userType")
+        .eq("userId", user?.id)
+        .single();
+
+      setTimeout(() => {
+        if (userData?.userType === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/");
+        }
+      }, 2000);
+
+    } catch (error: any) {
       setError(error.message);
-    } else {
-      router.push("/")
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
