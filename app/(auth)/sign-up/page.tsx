@@ -21,17 +21,42 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const fetchLocation = async () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        setError("Unable to fetch location. Please enable location services.");
+      }
+    );
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate phone number length
-    if (phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
+    if (phoneNumber.length !== 10 || !/^[\d]+$/.test(phoneNumber)) {
       setError("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    if (!location) {
+      setError("Location is required. Please enable location services.");
       return;
     }
 
@@ -63,6 +88,7 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
           userName: username,
           email: user?.email,
           phoneNumber: phoneNumber,
+          location: location ? `${location.lat},${location.lng}` : null,
         },
       ]);
 
@@ -136,6 +162,14 @@ const SignUp = (props: React.ComponentPropsWithoutRef<"div">) => {
                     required
                   />
                 </div>
+                <Button
+                  type="button"
+                  className="w-full bg-blue-500 hover:bg-blue-700"
+                  onClick={fetchLocation}
+                  disabled={loading || location !== null}
+                >
+                  {location ? "Location Captured" : "Get Location"}
+                </Button>
                 <Button
                   type="submit"
                   className="w-full bg-green-500 hover:bg-green-700"
