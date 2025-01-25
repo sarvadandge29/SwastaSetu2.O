@@ -120,11 +120,6 @@ const CreateCampaign: React.FC = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="coverImg">Campaign Image *</Label>
-                <ImageUpload onChange={handleUploadComplete} />
-              </div>
-
-              <div>
                 <Label htmlFor="title">Campaign Title *</Label>
                 <Input
                   id="title"
@@ -188,6 +183,10 @@ const CreateCampaign: React.FC = () => {
                   onChange={handleInputChange}
                   required
                 />
+              </div>
+              <div>
+                <Label htmlFor="coverImg">Campaign Image *</Label>
+                <ImageUpload onChange={handleUploadComplete} />
               </div>
 
               {errorMessage && (
