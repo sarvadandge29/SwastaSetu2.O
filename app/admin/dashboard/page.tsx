@@ -90,7 +90,7 @@ export function EnhancedGridLayout() {
       title: "Doctors",
       description: `Total Doctors: ${doctorsCount}`,
       icon: <IconUser className="h-10 w-10 text-neutral-500" />,
-      onClick: () => router.push("/admin/doctors"),
+      onClick: () => router.push("/admin/verify-doctors"),
     },
   ];
 
