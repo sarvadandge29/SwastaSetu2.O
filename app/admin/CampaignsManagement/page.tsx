@@ -39,9 +39,7 @@ const CampaignsManagement: React.FC = () => {
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
-        const { data, error } = await supabase
-          .from("campaigns")
-          .select("*");
+        const { data, error } = await supabase.from("campaigns").select("*");
 
         if (error) throw error;
 
@@ -64,22 +62,40 @@ const CampaignsManagement: React.FC = () => {
     fetchCampaigns();
   }, []);
 
-  const handleDeleteCampaign = async (id: number) => {
+  const handleDeleteCampaign = async (id: number, imageLink: string) => {
     try {
-      const { error } = await supabaseAdminRole
+      // Delete the campaign from the database
+      const { error: dbError } = await supabaseAdminRole
         .from("campaigns")
         .delete()
         .eq("id", id);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      setCampaigns((prevCampaigns) => prevCampaigns.filter((campaign) => campaign.id !== id));
+      const filePath = imageLink.split("/images/campaigns/")[1];
+      if (!filePath) {
+        throw new Error("Invalid image link");
+      }
+
+      const { error: storageError } = await supabaseAdminRole.storage
+        .from("images")
+        .remove([`campaigns/${filePath}`]);
+
+      if (storageError) throw storageError;
+
+      setCampaigns((prevCampaigns) =>
+        prevCampaigns.filter((campaign) => campaign.id !== id)
+      );
     } catch (error) {
-      console.error("Error deleting campaign:", error);
+      console.error("Error deleting campaign or image:", error);
     }
   };
 
-  const handleUpdateStatus = async (id: number, currentStatus: string) => {
+  const handleUpdateStatus = async (
+    id: number,
+    currentStatus: string,
+    imageLink: string
+  ) => {
     try {
       let newStatus = "";
       if (currentStatus === "pending") {
@@ -89,7 +105,7 @@ const CampaignsManagement: React.FC = () => {
       }
 
       if (newStatus === "takedown") {
-        await handleDeleteCampaign(id);
+        await handleDeleteCampaign(id, imageLink);
       } else {
         const { error } = await supabaseAdminRole
           .from("campaigns")
@@ -139,7 +155,11 @@ const CampaignsManagement: React.FC = () => {
                 <TableHead>Target Amount</TableHead>
                 <TableHead>UPI ID</TableHead>
                 <TableHead>Deadline</TableHead>
-                <TableHead>Current<br />Amount</TableHead>
+                <TableHead>
+                  Current
+                  <br />
+                  Amount
+                </TableHead>
                 <TableHead>User Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -168,18 +188,45 @@ const CampaignsManagement: React.FC = () => {
                   <TableCell>
                     <div className="flex gap-2">
                       {campaign.status === "pending" && (
-                        <Button
-                          className="bg-green-500 hover:bg-green-600"
-                          variant="default"
-                          onClick={() => handleUpdateStatus(campaign.id, campaign.status)}
-                        >
-                          Approve
-                        </Button>
+                        <div>
+                          <Button
+                            className="bg-green-500 hover:bg-green-600 mr-2"
+                            variant="default"
+                            onClick={() =>
+                              handleUpdateStatus(
+                                campaign.id,
+                                campaign.status,
+                                campaign.imageLink
+                              )
+                            }
+                          >
+                            Approve
+                          </Button>
+
+                          <Button
+                            variant="destructive"
+                            onClick={() =>
+                              handleUpdateStatus(
+                                campaign.id,
+                                campaign.status,
+                                campaign.imageLink
+                              )
+                            }
+                          >
+                            Reject
+                          </Button>
+                        </div>
                       )}
                       {campaign.status === "approved" && (
                         <Button
                           variant="destructive"
-                          onClick={() => handleUpdateStatus(campaign.id, campaign.status)}
+                          onClick={() =>
+                            handleUpdateStatus(
+                              campaign.id,
+                              campaign.status,
+                              campaign.imageLink
+                            )
+                          }
                         >
                           Take Down
                         </Button>
