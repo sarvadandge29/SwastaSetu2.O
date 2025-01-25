@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import Modal from "@/components/ui/Modal";
 import { ImageUpload } from "@/components/image-upload";
 import { supabase } from "@/utils/supabase/client";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/context/UserContext";
 
 const CreateCampaign: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,12 +23,10 @@ const CreateCampaign: React.FC = () => {
   });
 
   const router = useRouter();
+  const { userDetails } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<{
-    title: string;
-    description: string;
-  } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -41,16 +39,25 @@ const CreateCampaign: React.FC = () => {
     if (files.length > 0) {
       const file = files[0];
 
+      // Validate file type (images only)
+      if (!file.type.startsWith("image/")) {
+        setErrorMessage("Please upload a valid image file.");
+        return;
+      }
+
+      // Generate file name: campaignName_userName
+      const fileName = `${formData.title}_${userDetails?.userName || "anonymous"}`.replace(
+        /[^a-zA-Z0-9]/g,
+        "_"
+      );
+
+      // Upload to Supabase storage
       const { data, error } = await supabase.storage
         .from("images")
-        .upload(`campaigns/${file.name}`, file);
+        .upload(`campaigns/${fileName}`, file);
 
       if (error) {
-        setModalContent({
-          title: "Error",
-          description: "Failed to upload the image.",
-        });
-        setIsModalOpen(true);
+        setErrorMessage("Failed to upload the image.");
         return;
       }
 
@@ -58,19 +65,18 @@ const CreateCampaign: React.FC = () => {
         ? `https://llkuxbyxxliwnjuzywjb.supabase.co/storage/v1/object/public/images/${data.path}`
         : "";
       setFormData((prev) => ({ ...prev, imgLink: fileUrl }));
+      setErrorMessage(null); // Clear any previous error message
     }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
-    if (!formData.coverImg) {
-      setModalContent({
-        title: "Error",
-        description: "Please upload a campaign image.",
-      });
-      setIsModalOpen(true);
+    if (!formData.imgLink) {
+      setErrorMessage("Please upload a campaign image.");
       setIsLoading(false);
       return;
     }
@@ -84,23 +90,21 @@ const CreateCampaign: React.FC = () => {
           targetAmount: formData.targetAmount,
           upiID: formData.upiID,
           deadline: formData.deadline,
-          userId : '',
+          userId: userDetails?.userId,
+          userName: userDetails?.userName,
         },
       ]);
+
+      if (insertError) throw insertError;
+
+      setSuccessMessage("Campaign created successfully!");
+      router.push("/campaigns/All-campaigns"); // Redirect to campaigns page after success
     } catch (error) {
       console.error("Error:", error);
-      setModalContent({
-        title: "Error",
-        description: "There was an error creating your campaign.",
-      });
-      setIsModalOpen(true);
+      setErrorMessage("There was an error creating your campaign.");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
   };
 
   return (
@@ -153,7 +157,7 @@ const CreateCampaign: React.FC = () => {
                     id="upiID"
                     name="upiID"
                     type="text"
-                    placeholder="Enter your UPI Id"
+                    placeholder="Enter your UPI ID"
                     value={formData.upiID}
                     onChange={handleInputChange}
                     required
@@ -167,7 +171,7 @@ const CreateCampaign: React.FC = () => {
                   id="targetAmount"
                   name="targetAmount"
                   type="number"
-                  placeholder="0.5 SOL"
+                  placeholder="Target amount"
                   value={formData.targetAmount}
                   onChange={handleInputChange}
                   required
@@ -186,6 +190,13 @@ const CreateCampaign: React.FC = () => {
                 />
               </div>
 
+              {errorMessage && (
+                <p className="text-red-500 text-center">{errorMessage}</p>
+              )}
+              {successMessage && (
+                <p className="text-green-500 text-center">{successMessage}</p>
+              )}
+
               <div className="flex justify-center">
                 <Button
                   type="submit"
@@ -199,13 +210,6 @@ const CreateCampaign: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-      <Modal
-        isOpen={isModalOpen}
-        title={modalContent?.title || ""}
-        description={modalContent?.description || ""}
-        onClose={handleCloseModal}
-      />
     </div>
   );
 };
