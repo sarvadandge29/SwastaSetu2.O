@@ -2,12 +2,13 @@ import React from "react";
 import { motion } from "framer-motion";
 
 interface AlertBarProps {
-  message: any;
+  title: string;
+  message: string; 
 }
 
-export const AlertBar: React.FC<AlertBarProps> = ({ message }) => {
+export const AlertBar: React.FC<AlertBarProps> = ({ title, message }) => {
   return (
-    <div className="relative bg-green-500 text-red-600 overflow-hidden h-8 flex items-center">
+    <div className="relative bg-green-500 text-black overflow-hidden h-8 flex items-center border-b border-black">
       <motion.div
         className="absolute whitespace-nowrap text-lg font-semibold w-full"
         initial={{ x: "100%" }}
@@ -18,9 +19,8 @@ export const AlertBar: React.FC<AlertBarProps> = ({ message }) => {
           ease: "linear",
         }}
       >
-        {message}
+        <span className="font-bold text-red-600">{title}:</span> {message}
       </motion.div>
     </div>
   );
 };
-
