@@ -79,9 +79,9 @@ const MapComponent: FC = () => {
       </MapContainer>
       <button
         onClick={fetchCurrentLocation}
-        className="absolute bottom-5 right-5 p-2 bg-green-600 text-white font-semibold rounded-xl shadow-md hover:bg-green-700 transition"
+        className="absolute bottom-5 right-5 z-[100000] py-1 px-3 bg-green-600 text-white font-semibold rounded-sm shadow-md hover:bg-green-700 transition"
       >
-        Find Me
+        Find Hospitals Near Me
       </button>
     </>
   );

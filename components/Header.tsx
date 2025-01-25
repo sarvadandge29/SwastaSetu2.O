@@ -139,6 +139,33 @@ const Header = () => {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-base cursor-pointer capitalize text-gray-400">
+                  Docters Discussion
+                </NavigationMenuTrigger>
+                <NavigationMenuContent className="min-w-48">
+                  <ul className="p-4 rounded shadow-lg">
+                    <li className="hover:underline">
+                      <Link
+                        href="/doctors/create-post"
+                        legacyBehavior
+                        passHref
+                      >
+                        <NavigationMenuLink>Create Post</NavigationMenuLink>
+                      </Link>
+                    </li>
+                    <li className="hover:underline mt-2">
+                      <Link
+                        href="/doctors/all-post"
+                        legacyBehavior
+                        passHref
+                      >
+                        <NavigationMenuLink>All Posts</NavigationMenuLink>
+                      </Link>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
           <li>
@@ -166,9 +193,9 @@ const Header = () => {
       {/* Display all alerts */}
       {alerts.map((alert) => (
         <AlertBar
-          key={alert.id} // Use the alert ID as the key
-          title={alert.tittle} // Pass the alert title
-          message={alert.message} // Pass the alert message
+          key={alert.id}
+          title={alert.tittle}
+          message={alert.message}
         />
       ))}
     </div>
