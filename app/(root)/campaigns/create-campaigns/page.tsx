@@ -1,42 +1,63 @@
-"use client"; // Ensures the component runs on the client side
+"use client";
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Modal from "@/components/ui/Modal";
 import { ImageUpload } from "@/components/image-upload";
+import { supabase } from "@/utils/supabase/client";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const CreateCampaign: React.FC = () => {
   const [formData, setFormData] = useState({
     coverImg: "",
+    imgLink: "",
     title: "",
     description: "",
     targetAmount: 0,
-    publicAddress: "",
+    upiID: "",
     deadline: "",
-    currentAmount: 0,
-    status: "pending",
   });
 
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<{ title: string; description: string } | null>(null);
+  const [modalContent, setModalContent] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
   const handleUploadComplete = async (files: File[]) => {
     if (files.length > 0) {
-      const file = files[0]; // Get the first file
-      const url = URL.createObjectURL(file); // Generate a URL for the file
-      setFormData((prev) => ({ ...prev, coverImg: url }));
+      const file = files[0];
+
+      const { data, error } = await supabase.storage
+        .from("images")
+        .upload(`campaigns/${file.name}`, file);
+
+      if (error) {
+        setModalContent({
+          title: "Error",
+          description: "Failed to upload the image.",
+        });
+        setIsModalOpen(true);
+        return;
+      }
+
+      const fileUrl = data?.path
+        ? `https://llkuxbyxxliwnjuzywjb.supabase.co/storage/v1/object/public/images/${data.path}`
+        : "";
+      setFormData((prev) => ({ ...prev, imgLink: fileUrl }));
     }
   };
 
@@ -44,36 +65,34 @@ const CreateCampaign: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (formData.publicAddress.length !== 44) {
-      setModalContent({ title: "Error", description: "Public address must be exactly 44 characters." });
+    if (!formData.coverImg) {
+      setModalContent({
+        title: "Error",
+        description: "Please upload a campaign image.",
+      });
       setIsModalOpen(true);
       setIsLoading(false);
       return;
     }
 
-    const adjustedFormData = {
-      ...formData,
-      targetAmount: Number(formData.targetAmount),
-    };
-
     try {
-      const res = await fetch("/api/campaigns/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const { error: insertError } = await supabase.from("campaigns").insert([
+        {
+          imageLink: formData.imgLink,
+          title: formData.title,
+          description: formData.description,
+          targetAmount: formData.targetAmount,
+          upiID: formData.upiID,
+          deadline: formData.deadline,
+          userId : '',
         },
-        body: JSON.stringify(adjustedFormData),
-      });
-
-      if (res.ok) {
-        const campaign = await res.json();
-        router.push(`/campaigns/${campaign.campaign._id}/show`);
-      } else {
-        throw new Error("Failed to create campaign");
-      }
+      ]);
     } catch (error) {
       console.error("Error:", error);
-      setModalContent({ title: "Error", description: "There was an error creating your campaign." });
+      setModalContent({
+        title: "Error",
+        description: "There was an error creating your campaign.",
+      });
       setIsModalOpen(true);
     } finally {
       setIsLoading(false);
@@ -87,11 +106,12 @@ const CreateCampaign: React.FC = () => {
   return (
     <div className="relative bg-cover bg-center min-h-screen pt-20">
       <div className="absolute inset-0"></div>
-
       <div className="relative flex items-center justify-center min-h-screen p-4">
         <Card className="max-w-2xl w-full bg-opacity-90 rounded-lg p-2 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-center text-3xl">Start a Campaign</CardTitle>
+            <CardTitle className="text-center text-3xl">
+              Start a Campaign
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -128,13 +148,13 @@ const CreateCampaign: React.FC = () => {
 
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <Label htmlFor="publicAddress">UPI ID *</Label>
+                  <Label htmlFor="upiID">UPI ID *</Label>
                   <Input
-                    id="publicAddress"
-                    name="publicAddress"
+                    id="upiID"
+                    name="upiID"
                     type="text"
                     placeholder="Enter your UPI Id"
-                    value={formData.publicAddress}
+                    value={formData.upiID}
                     onChange={handleInputChange}
                     required
                   />
@@ -167,7 +187,11 @@ const CreateCampaign: React.FC = () => {
               </div>
 
               <div className="flex justify-center">
-                <Button type="submit" className="bg-green-500 text-white px-6 py-3" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="bg-green-500 text-white px-6 py-3"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Submitting..." : "Submit Campaign"}
                 </Button>
               </div>
