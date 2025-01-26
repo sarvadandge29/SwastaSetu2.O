@@ -28,7 +28,7 @@ type Alert = {
   userName: string;
   message: string;
   level: string;
-  tittle: string;
+  title: string;
 };
 
 const Alerts = () => {
@@ -115,7 +115,7 @@ const Alerts = () => {
         .insert([
           {
             id: nextId, // Manually assign the next ID
-            tittle: title,
+            title: title,
             message: message,
             level: level,
             userId: currentUser.id,
@@ -226,7 +226,7 @@ const Alerts = () => {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{alert.userId}</TableCell>
                   <TableCell>{alert.userName}</TableCell>
-                  <TableCell>{alert.tittle}</TableCell>
+                  <TableCell>{alert.title}</TableCell>
                   <TableCell>{alert.message}</TableCell>
                   <TableCell>{alert.level}</TableCell>
                   <TableCell>
