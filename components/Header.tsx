@@ -98,8 +98,8 @@ const Header = () => {
                 <NavigationMenuContent className="min-w-48">
                   <ul className="p-4 rounded shadow-lg">
                     <li className="hover:underline">
-                      <Link href="/self-diagnosis" legacyBehavior passHref>
-                        <NavigationMenuLink>Self Diagnosis</NavigationMenuLink>
+                      <Link href="/SearchResources" legacyBehavior passHref>
+                        <NavigationMenuLink>Search Resources</NavigationMenuLink>
                       </Link>
                     </li>
                     <li className="hover:underline mt-2">

@@ -22,8 +22,7 @@ const CreatePost = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
+  const [userId, setUserId] = useState<string>(""); // Only userId is needed
   const [isVerifiedDoctor, setIsVerifiedDoctor] = useState<boolean>(false);
   const [isDoctor, setIsDoctor] = useState<boolean>(false);
 
@@ -33,7 +32,6 @@ const CreatePost = () => {
   useEffect(() => {
     const fetchUserRoleAndVerification = async () => {
       if (userDetails) {
-        setUserName(userDetails.userName || ""); // Set userName from the session
         setUserId(userDetails.userId || ""); // Set userId from the session
 
         // Fetch the user's role and verification status
@@ -61,8 +59,8 @@ const CreatePost = () => {
   }, [userDetails]);
 
   useEffect(() => {
-    if (!isDoctor && userDetails) {
-      router.push("/doctors/authenticate");
+    if (!setIsVerifiedDoctor) {
+      router.push("/doctors/authenticate"); // Redirect non-doctors to the authentication page
     }
   }, [isDoctor, userDetails, router]);
 
@@ -94,7 +92,7 @@ const CreatePost = () => {
 
       // Step 1: Upload image to Supabase Storage inside the `post` folder
       if (imageFile) {
-        const fileName = `${userName}_${imageFile.name}`.replace(/[^a-zA-Z0-9]/g, "_");
+        const fileName = `${userId}_${imageFile.name}`.replace(/[^a-zA-Z0-9]/g, "_"); // Use userId for the file name
         const filePath = `post/${fileName}`; // Specify the folder path
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("images") // Bucket name
@@ -116,7 +114,6 @@ const CreatePost = () => {
         .insert([
           {
             userId,
-            userName,
             title: formData.title,
             content: formData.content,
             location: formData.location,
@@ -142,7 +139,6 @@ const CreatePost = () => {
   if (!isVerifiedDoctor) {
     return (
       <div className="relative bg-cover bg-center min-h-96 pt-20">
-        <div className="absolute inset-0"></div>
         <div className="relative flex items-center justify-center min-h-screen p-4">
           <Card className="max-w-2xl w-full bg-opacity-90 rounded-lg p-2 shadow-lg">
             <CardHeader>
