@@ -194,7 +194,7 @@ const Header = () => {
       {alerts.map((alert) => (
         <AlertBar
           key={alert.id}
-          title={alert.tittle}
+          title={alert.title}
           message={alert.message}
         />
       ))}
