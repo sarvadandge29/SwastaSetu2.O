@@ -23,21 +23,20 @@ const CreatePost = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>(""); // Only userId is needed
-  const [isVerifiedDoctor, setIsVerifiedDoctor] = useState<boolean>(false);
   const [isDoctor, setIsDoctor] = useState<boolean>(false);
 
   const router = useRouter();
   const { userDetails } = useAuth(); // Fetch user details from the context
 
   useEffect(() => {
-    const fetchUserRoleAndVerification = async () => {
+    const fetchUserRole = async () => {
       if (userDetails) {
         setUserId(userDetails.userId || ""); // Set userId from the session
 
-        // Fetch the user's role and verification status
+        // Check if the user is a doctor by querying the doctors table
         const { data, error } = await supabase
-          .from("doctors") // Replace with your table name
-          .select("authenticated")
+          .from("doctors") // Use the doctors table
+          .select("userId")
           .eq("userId", userDetails.userId)
           .single();
 
@@ -46,23 +45,24 @@ const CreatePost = () => {
           setIsDoctor(false); // User is not a doctor
         } else if (data) {
           setIsDoctor(true); // User is a doctor
-          if (data.authenticated === "verified") {
-            setIsVerifiedDoctor(true); // User is a verified doctor
-          } else {
-            setIsVerifiedDoctor(false); // User is a doctor but not verified
-          }
         }
       }
     };
 
-    fetchUserRoleAndVerification();
+    fetchUserRole();
   }, [userDetails]);
 
   useEffect(() => {
-    if (!setIsVerifiedDoctor) {
-      router.push("/doctors/authenticate"); // Redirect non-doctors to the authentication page
+    if (!isDoctor) {
+      // Add a 1.5-second delay before redirecting
+      const redirectTimer = setTimeout(() => {
+        router.push("/doctors/authenticate"); // Redirect non-doctors to the authentication page
+      }, 1500);
+
+      // Cleanup the timer to avoid memory leaks
+      return () => clearTimeout(redirectTimer);
     }
-  }, [isDoctor, userDetails, router]);
+  }, [isDoctor, router]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -133,26 +133,9 @@ const CreatePost = () => {
   };
 
   if (!isDoctor) {
-    return null; // Redirecting to the authentication page, so no need to render anything
-  }
-
-  if (!isVerifiedDoctor) {
     return (
-      <div className="relative bg-cover bg-center min-h-96 pt-20">
-        <div className="relative flex items-center justify-center min-h-screen p-4">
-          <Card className="max-w-2xl w-full bg-opacity-90 rounded-lg p-2 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-center text-3xl">
-                Create a Post
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-red-500 text-center">
-                Only verified doctors can create posts.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg">You are not authorized to create posts. Redirecting...</p>
       </div>
     );
   }
